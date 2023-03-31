@@ -38,6 +38,8 @@ public class SimulatorPDUProcessorFactory implements PDUProcessorFactory
     private ShortMessageStore messageStore;
     private DeliveryInfoSender deliveryInfoSender;
     private Table users;
+    private String timedOutMsisdnsCsv;
+    private String internalErrorMsisdnsCsv;
 
     /**
      * If the information about processing has to be printed
@@ -57,12 +59,16 @@ public class SimulatorPDUProcessorFactory implements PDUProcessorFactory
     public SimulatorPDUProcessorFactory(PDUProcessorGroup procGroup,
                                         ShortMessageStore messageStore,
                                         DeliveryInfoSender deliveryInfoSender,
-                                        Table users)
+                                        Table users,
+                                        String timedOutMsisdnsCsv,
+                                        String internalErrorMsisdnsCsv)
     {
         this.procGroup = procGroup;
         this.messageStore = messageStore;
         this.deliveryInfoSender = deliveryInfoSender;
         this.users = users;
+        this.timedOutMsisdnsCsv = timedOutMsisdnsCsv;
+        this.internalErrorMsisdnsCsv = internalErrorMsisdnsCsv;
     }
 
     /**
@@ -75,7 +81,7 @@ public class SimulatorPDUProcessorFactory implements PDUProcessorFactory
     public PDUProcessor createPDUProcessor(SMSCSession session)
     {
         SimulatorPDUProcessor simPDUProcessor
-            = new SimulatorPDUProcessor(session,messageStore,users);
+                = new SimulatorPDUProcessor(session,messageStore,users,timedOutMsisdnsCsv,internalErrorMsisdnsCsv);
         simPDUProcessor.setDisplayInfo(getDisplayInfo());
         simPDUProcessor.setGroup(procGroup);
         simPDUProcessor.setDeliveryInfoSender(deliveryInfoSender);

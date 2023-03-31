@@ -66,7 +66,7 @@ public abstract class PDUProcessor
      * Meant to process <code>request</code>s received from client.
      * @param request the request received from client
      */
-    public abstract void clientRequest(Request request);
+    public abstract void clientRequest(Request request) throws InterruptedException;
     
     /**
      * Meant to process <code>response</code>s received from client.

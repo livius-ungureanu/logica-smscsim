@@ -104,6 +104,9 @@ public class SimulatorPDUProcessor extends PDUProcessor
     private Debug debug = SmppObject.getDebug();
     private Event event = SmppObject.getEvent();
 
+    private String timedOutMsisdnsCsv;
+    private String internalErrorMsisdnsCsv;
+
     /**
      * Constructs the PDU processor with given session,
      * message store for storing of the messages and a table of
@@ -113,11 +116,13 @@ public class SimulatorPDUProcessor extends PDUProcessor
      * @param users the list of users used for authenticating of the client
      */   
     public SimulatorPDUProcessor(SMSCSession session,
-        ShortMessageStore messageStore, Table users)
+        ShortMessageStore messageStore, Table users, String timedOutMsisdnsCsv, String internalErrorMsisdnsCsv)
     {
         this.session = session;
         this.messageStore = messageStore;
         this.users = users;
+        this.timedOutMsisdnsCsv = timedOutMsisdnsCsv;
+        this.internalErrorMsisdnsCsv = internalErrorMsisdnsCsv;
     }
 
     /**
@@ -127,14 +132,15 @@ public class SimulatorPDUProcessor extends PDUProcessor
      * parameters.
      * @param request the request from client
      */
-    public void clientRequest(Request request)
+    public void clientRequest(Request request) throws InterruptedException
     {
         debug.write("SimulatorPDUProcessor.clientRequest() " + request.debugString());
         Response response;
         int commandStatus;
         int commandId = request.getCommandId();
         try {
-            display("client request: "+request.debugString());
+            String requestString = request.debugString();
+            display("client request: "+requestString);
             if (!bound) { // the first PDU must be bound request
                 if (commandId == Data.BIND_TRANSMITTER ||
                     commandId == Data.BIND_RECEIVER ||
@@ -182,15 +188,28 @@ public class SimulatorPDUProcessor extends PDUProcessor
                     case Data.SUBMIT_SM:
                         SubmitSMResp submitResponse = (SubmitSMResp)response;
                         submitResponse.setMessageId(assignMessageId());
+                        String destMsisdn = extractMsisdn(requestString);
+                        display("destination address = "+destMsisdn);
                         display("putting message into message store");
                         messageStore.submit((SubmitSM)request,
-                                            submitResponse.getMessageId(),systemId);
-                        byte registeredDelivery =
-                            (byte)(((SubmitSM)request).getRegisteredDelivery() &
-                            Data.SM_SMSC_RECEIPT_MASK);
-                        if (registeredDelivery == Data.SM_SMSC_RECEIPT_REQUESTED) {
-                            deliveryInfoSender.submit(this,(SubmitSM)request,
-                                                      submitResponse.getMessageId());
+                                submitResponse.getMessageId(),systemId);
+
+                        if (this.timedOutMsisdnsCsv.contains(destMsisdn)) {
+                            display(destMsisdn+" found in timed.out.msisdns. Sleeping for 1 minute.");
+                            Thread.sleep(60000);
+                        }
+                        if (this.internalErrorMsisdnsCsv.contains(destMsisdn)) {
+                            display(destMsisdn+" found in internal.error.msisdns. Submitting failure response.");
+                            deliveryInfoSender.fail(this,(SubmitSM)request,
+                                    submitResponse.getMessageId());
+                        } else {
+                            byte registeredDelivery =
+                                    (byte)(((SubmitSM)request).getRegisteredDelivery() &
+                                            Data.SM_SMSC_RECEIPT_MASK);
+                            if (registeredDelivery == Data.SM_SMSC_RECEIPT_REQUESTED) {
+                                deliveryInfoSender.submit(this,(SubmitSM)request,
+                                        submitResponse.getMessageId());
+                            }
                         }
                         break;
 
@@ -387,6 +406,15 @@ public class SimulatorPDUProcessor extends PDUProcessor
             }
             System.out.println(FileLog.getLineTimeStamp() + " ["+sysId+"] "+info);
         }
+    }
+
+    private String extractMsisdn(String clientRequest) {
+        // clientRequest example: (submit: (pdu: 98 4 0 28) (addr: 0 0 1616)  (addr: 0 0 258844000772)  (sm: msg: Hello World!)  (opt: ) )
+        // Extract destinationAddress representation as hex string
+        String destAddrHexString = clientRequest.split("addr:")[2].split("\\)")[0];
+        String[] parts = destAddrHexString.split(" ");
+        String msisdn = parts[parts.length-1];
+        return msisdn;
     }
     
 }
