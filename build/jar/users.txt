@@ -44,3 +44,8 @@ password=ggoohu
 name=DAMIEN
 password=neimad
 
+name=msisdns
+password=msisdns
+timed.out.msisdns=258024403330,258024403334
+internal.error.msisdns=258024405550,258024405554
+

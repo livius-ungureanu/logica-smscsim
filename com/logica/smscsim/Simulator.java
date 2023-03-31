@@ -165,8 +165,29 @@ public class Simulator
             deliveryInfoSender = new DeliveryInfoSender();
             deliveryInfoSender.start();
             users = new Table(usersFileName);
+
+            com.logica.smscsim.util.Record msisdns = this.users.find(new com.logica.smscsim.util.Attribute("name", "msisdns"));
+            String timedOutMsisdns = null;
+            String internalErrorMsisdns = null;
+
+            if (msisdns != null) {
+                System.out.println("Found msisdns record.");
+                timedOutMsisdns = msisdns.getValue("timed.out.msisdns");
+                internalErrorMsisdns = msisdns.getValue("internal.error.msisdns");
+            } else {
+                System.out.println("Could not find msisnds record.");
+            }
+
+            if (timedOutMsisdns != null) {
+                System.out.println("timedOutMsisds=" + timedOutMsisdns);
+            }
+            if (internalErrorMsisdns != null) {
+                System.out.println("internalErrorMsisds=" + internalErrorMsisdns);
+            }
+
+
             factory = new SimulatorPDUProcessorFactory(processors,messageStore,
-                                                       deliveryInfoSender,users);
+                                                       deliveryInfoSender,users, timedOutMsisdns, internalErrorMsisdns);
 	    factory.setDisplayInfo(displayInfo);
             smscListener.setPDUProcessorFactory(factory);
             smscListener.start();
