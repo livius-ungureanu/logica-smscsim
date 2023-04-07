@@ -80,12 +80,6 @@ public class DeliveryInfoSender extends ProcessingThread
         submit(processor,submitRequest,messageId,DELIVERED,0);
     }
 
-    public void fail(PDUProcessor processor, SubmitSM submitRequest,
-                     String messageId)
-    {
-        submit(processor,submitRequest,messageId,UNKNOWN,5);
-    }
-
 
     private void deliver(DeliveryInfoEntry entry)
     {

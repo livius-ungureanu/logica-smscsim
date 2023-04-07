@@ -19,6 +19,8 @@ import com.logica.smpp.pdu.*;
 import com.logica.smscsim.util.Record;
 import com.logica.smscsim.util.Table;
 
+import static com.logica.smscsim.DeliveryInfoSender.UNKNOWN;
+
 /**
  * Class <code>SimulatorPDUProcessor</code> gets the <code>Request</code>
  * from the client and creates the proper
@@ -199,9 +201,9 @@ public class SimulatorPDUProcessor extends PDUProcessor
                             Thread.sleep(60000);
                         }
                         if (this.internalErrorMsisdnsCsv.contains(destMsisdn)) {
-                            display(destMsisdn+" found in internal.error.msisdns. Submitting failure response.");
-                            deliveryInfoSender.fail(this,(SubmitSM)request,
-                                    submitResponse.getMessageId());
+                            display(destMsisdn+" found in internal.error.msisdns. Submitting UNKNOWN(5) failure response.");
+                            // any response other than 0 signals an error.
+                            response.setCommandStatus(UNKNOWN);
                         } else {
                             byte registeredDelivery =
                                     (byte)(((SubmitSM)request).getRegisteredDelivery() &

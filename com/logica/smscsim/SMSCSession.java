@@ -107,7 +107,11 @@ implements Runnable
                 if (pdu != null) {
                     if (pdu.isRequest()) {
                         debug.write("SMSCSession got request " + pdu.debugString());
-                        pduProcessor.clientRequest((Request)pdu);
+                        try {
+                            pduProcessor.clientRequest((Request)pdu);
+                        } catch (InterruptedException e) {
+                            debug.write("SMSCSession got InterruptedException.");
+                        }
                     } else if (pdu.isResponse()) {
                         debug.write("SMSCSession got response " + pdu.debugString());
                         pduProcessor.clientResponse((Response)pdu);
